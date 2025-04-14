@@ -1,11 +1,32 @@
 const express = require('express');
 
 const app = express();
+const { adminAuth, userAuth } = require("./middlewares/auth");
 
 // Below is the route handler creating..
 // Order of the routes matter lot*\
 
-qpp.use("/user", rh1, rh2, [rh3,rh4, rh5])
+// qpp.use("/user", rh1, rh2, [rh3,rh4, rh5])
+// ====> multiple request handlers example here
+
+//Handle Auth Middlewares for all the Get,POST,.... requests
+app.use("/admin", adminAuth); 
+
+//This will only handle GET call to/user
+app.get("/admin/getAllData", (req,res) =>{
+    console.log("get all data method!!!")
+    res.send("Data successfully saved to the database for get data");
+})
+
+app.get("/user", userAuth , (req,res) =>{
+    // saving data to the DB.
+    res.send("Data successfully saved to the database");
+})
+
+// Below is the route handler creating..
+// Order of the routes matter lot*\
+
+// qpp.use("/user", rh1, rh2, [rh3,rh4, rh5])
 // ====> multiple request handlers example here
 
 //This will only handle GET call to/user
