@@ -3,6 +3,7 @@ const connectDB = require("./config/database");
 
 const app = express();
 const User = require("./models/user");
+app.use(express.json());
 // const { adminAuth, userAuth } = require("./middlewares/auth");
 
 // Below is the route handler creating..
@@ -72,13 +73,14 @@ const User = require("./models/user");
 
 // Creating mine first Post api call to save the data
 app.post("/signup", async (req,res) =>{
-    //  creating a new instance of the User model
-    const user = new User({
-        firstName: "Viratdsssssssss",
-        lastName: "Kohli",
-        emailId: "virat123@gmail.com",
-        password: "pradeep@188888823"
-    });
+    const user = new User(req.body);
+//  creating a new instance of the User model
+//     const user = new User({
+//         firstName: "Viratdsssssssss",
+//         lastName: "Kohli",
+//         emailId: "virat123@gmail.com",
+//         password: "pradeep@188888823"
+//     });
 
   try{
     await user.save();
@@ -86,6 +88,18 @@ app.post("/signup", async (req,res) =>{
   } catch(err) {
     res.status(400).send("Error saving the user: " + err.message);
   }
+})
+
+
+app.get("/user", async (req,res) =>{
+    const userEmail = req.body.emailId;
+    try{
+        const user = await User.find({emailId: userEmail});
+        res.send(user);
+    }
+    catch(err) {
+        res.status(400).send("something went wrong....")
+    }
 })
 
 
