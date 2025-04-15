@@ -74,6 +74,7 @@ app.use(express.json());
 // Creating mine first Post api call to save the data
 app.post("/signup", async (req,res) =>{
     const user = new User(req.body);
+  
 //  creating a new instance of the User model
 //     const user = new User({
 //         firstName: "Viratdsssssssss",
@@ -90,15 +91,69 @@ app.post("/signup", async (req,res) =>{
   }
 })
 
-
+// Creating mine first GET api call to get the data
 app.get("/user", async (req,res) =>{
     const userEmail = req.body.emailId;
     try{
-        const user = await User.find({emailId: userEmail});
-        res.send(user);
+        const users = await User.find({emailId: userEmail});
+        if(users.length === 0){
+        res.status(404).send("Users not found.......");
+        } else {
+            res.send(users);
+        }
+        
     }
     catch(err) {
         res.status(400).send("something went wrong....")
+    }
+})
+
+// Feed API- GET /feed -get all the users from the database
+app.get("/feed", async (req,res) =>{
+    try{
+        const users = await User.find({});
+        res.send(users);
+    } catch(err) {
+        res.status(400).send("Something went wrong here...")
+    }
+})
+
+// Delete an document from the data base
+app.delete("/user", async (req,res) =>{
+    const userId = req.body.userId;
+    // console.log(userId)
+    try{
+        const user = await User.findByIdAndDelete(userId);
+        res.send("User deleted successfully...");
+    } catch {
+        res.status(400).send("something went wrong here!!!!!");
+    }
+})
+
+// Update data for the user in database
+app.patch("/user/:userId", async (req,res) => {
+    const userId = req.params?.userId;
+    const data = req.body;
+
+    try {
+        const ALLOWED_UPDATES = [
+            "photoUrl",
+            "about",
+            "gender",
+            "age",
+            "skills",
+        ];
+        const isUpdateAllowed = Object.keys(data).every((k) => 
+            ALLOWED_UPDATES.includes(k)
+        );
+        if(!isUpdateAllowed){
+            throw new Error("Update not allowed");
+        }
+       const user = await User.findByIdAndUpdate({_id: userId}, data);
+       console.log("Amdata here", data)
+       res.send("data updated successfully in database");
+    } catch {
+        res.status(400).send("something went wrong here..");
     }
 })
 
