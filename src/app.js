@@ -1,9 +1,17 @@
 const express = require('express');
 const connectDB = require("./config/database");
-
-const app = express();
 const User = require("./models/user");
+const {validatesSignUpData} = require ("./utils/validation");
+const bcrypt = require('bcrypt');
+const cookieParser = require('cookie-parser');
+const jwt = require("jsonwebtoken");
+const { userAuth } = require("./middlewares/auth");
+const app = express();
+
+
 app.use(express.json());
+app.use(cookieParser());
+
 // const { adminAuth, userAuth } = require("./middlewares/auth");
 
 // Below is the route handler creating..
@@ -72,8 +80,36 @@ app.use(express.json());
 
 
 // Creating mine first Post api call to save the data
+app.post("/login", async (req,res) =>{   
+      try{
+    const {emailId, password} = req.body;
+
+    const user = await User.findOne({emailId : emailId});
+    if(!user) {
+        throw new Error ("Invalid credentials");
+    }
+
+    const isPasswordValid = await user.validatePassword(password);
+    
+        if(isPasswordValid){
+
+            // Create a JWT token
+            const token = await user.getJWT();
+            
+            
+            // Add the token to cookie and send the response back to the user.
+            res.cookie("token", token);
+            res.send("Login Successfull !!!!");
+        } else {
+            throw new Error ("Invalid credentials");
+        }
+      } catch(err) {
+        res.status(400).send("Error  : " + err.message);
+      }
+    })
+
+// Creating mine first Post api call to save the data
 app.post("/signup", async (req,res) =>{
-    const user = new User(req.body);
   
 //  creating a new instance of the User model
 //     const user = new User({
@@ -84,15 +120,33 @@ app.post("/signup", async (req,res) =>{
 //     });
 
   try{
+    // validation of data 
+    validatesSignUpData(req);
+
+    // encrypt the password
+    const {firstName, lastName, emailId, password} = req.body;
+    const passwordHash = await bcrypt.hash(password, 10);
+    console.log(passwordHash);
+
+    //  creating a new instance of the User model
+    // const user = new User(req.body); ---> below is another way to send our hash password in db.
+
+    const user = new User({
+        firstName,
+        lastName,
+        emailId,
+        password: passwordHash,
+    });
+
     await user.save();
     res.send("User added successfully.....!!!")
   } catch(err) {
-    res.status(400).send("Error saving the user: " + err.message);
+    res.status(400).send("Error  : " + err.message);
   }
 })
 
 // Creating mine first GET api call to get the data
-app.get("/user", async (req,res) =>{
+app.get("/user", userAuth, async (req,res) =>{
     const userEmail = req.body.emailId;
     try{
         const users = await User.find({emailId: userEmail});
@@ -107,6 +161,24 @@ app.get("/user", async (req,res) =>{
         res.status(400).send("something went wrong....")
     }
 })
+
+
+app.get("/profile", userAuth,  async (req,res) => {
+    try {    
+        const user = req.user;
+        res.send(user);
+    } catch(err) {
+        res.status(400).send("some thing went wrong here....!!!")
+    }    
+  }
+)
+
+app.post("/sendConnectionRequest", userAuth, async(req,res) =>{
+    console.log("Sending a connection request");
+
+    res.send(req.user.firstName + " Connection request got it.");
+})
+
 
 // Feed API- GET /feed -get all the users from the database
 app.get("/feed", async (req,res) =>{
