@@ -21,4 +21,4 @@
 12. GET/user/requests/
 13. GET/feed - Gets 
 
-status- ignore, interested, accepted, rejected.
+status- ignored, interested, accepted, rejected.
