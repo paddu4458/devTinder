@@ -4,6 +4,7 @@ const userRouter = express.Router();
 const { userAuth } = require("../middlewares/auth");
 const ConnectionRequest = require("../models/connectionRequest");
 const User = require("../models/user");
+const USER_SAFE_DATA = "firstName lastName photoUrl age gender about skills";
 
 //Get all the pending connection request for the loggedIn user
 userRouter.get("/user/requests/received", userAuth, async(req, res) => {
@@ -13,7 +14,7 @@ userRouter.get("/user/requests/received", userAuth, async(req, res) => {
         const connectionRequests = await ConnectionRequest.find({
             toUserId: loggedInUser._id,
             status: "interested",
-        }).populate("fromUserId", ["firstName", "lastName"]);
+        }).populate("fromUserId", "firstName lastName photoUrl age gender about skills");
 
         res.json({
             message : "Data fetched successfully",
@@ -76,9 +77,8 @@ userRouter.get("/feed", userAuth, async (req,res) =>{
                 {_id: {$nin: Array.from(hideUsersFromFeed)}},
                 {_id: {$ne: loggedInUser._id}},
             ]
-        }).select("fromUserId toUserId firstName lastName").skip(skip).limit(limit);
-        res.send(users);
-
+        }).select(USER_SAFE_DATA).skip(skip).limit(limit);
+        res.json({data : users});
     }
     catch (err) {
         res.status(400).json({message : err.message});
